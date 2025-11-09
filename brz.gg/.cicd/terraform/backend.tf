@@ -1,7 +1,7 @@
 terraform {
     backend "s3" {
-        bucket = "brztech-brz-gg-state"
-        key    = "terraform/terraform.tfstate"
-        region = "sa-east-1"
+        bucket = "brz.gg-terraform-state"
+        key    = "terraform/brz.gg-terraform.tfstate"
+        region = "us-east-1"
     }
 }

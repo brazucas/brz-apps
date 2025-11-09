@@ -1,8 +1,8 @@
 data "terraform_remote_state" "brz_state" {
   backend = "s3"
   config = {
-    bucket = "brztech-terraform-state"
+    bucket = "brz.gg-terraform-state"
     key    = "terraform.tfstate"
-    region = "sa-east-1"
+    region = "us-east-1"
   }
 }

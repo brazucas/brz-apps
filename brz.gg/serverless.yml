@@ -23,7 +23,7 @@ provider:
   region: us-east-1
   memorySize: 128
   iam:
-    role: arn:aws:iam::408356563302:role/brz_lambda
+    role: arn:aws:iam::402559046161:role/brz_lambda
 package:
   excludeDevDependencies: true
   patterns:

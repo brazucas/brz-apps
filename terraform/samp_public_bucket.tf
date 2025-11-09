@@ -1,10 +1,7 @@
 resource "aws_s3_bucket" "cdn_brz_gg" {
-  bucket = "cdn.brz.gg"
+  bucket = "cdn.brz.gg-2"
 
-  tags = {
-    Name        = "brz"
-    Environment = "Production"
-  }
+  tags = var.common_tags
 }
 
 resource "aws_s3_bucket_policy" "cdn_brz_gg" {
