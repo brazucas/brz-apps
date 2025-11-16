@@ -1,0 +1,188 @@
+name: discord-zina-bot cd
+
+run-name: Deploy Discord Zina Bot to EC2 by @${{ github.actor }}
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "discord-zina-bot/**"
+      - ".github/workflows/discord-zina-bot-cd.yml"
+
+jobs:
+  terraform:
+    name: Deploy Infrastructure with Terraform
+    runs-on: ubuntu-latest
+    environment: discord-zina-bot-production
+    env:
+      working_path: discord-zina-bot
+    steps:
+      - name: Clone the repository code
+        uses: actions/checkout@v3
+
+      - name: Setup the Terraform CLI
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.0
+
+      - name: Setup AWS Credentials
+        run: |
+          mkdir -p ~/.aws
+          echo "[default]" > ~/.aws/credentials
+          echo "aws_access_key_id = ${{ secrets.AWS_ACCESS_KEY_ID }}" >> ~/.aws/credentials
+          echo "aws_secret_access_key = ${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> ~/.aws/credentials
+          AWS_PROFILE=default && echo AWS_PROFILE=$AWS_PROFILE >> $GITHUB_ENV
+
+      - name: Copy SSH public key for EC2
+        run: |
+          mkdir -p ${{ env.working_path }}/.cicd/terraform
+          echo "${{ vars.BRZ_SSH_PUBLIC_KEY }}" > ${{ env.working_path }}/.cicd/terraform/brz_key.pub
+
+      - name: Initialize the Terraform working directory
+        working-directory: ${{ env.working_path }}/.cicd/terraform
+        id: init
+        run: terraform init -input=false
+
+      - name: Apply the Terraform execution plan
+        working-directory: ${{ env.working_path }}/.cicd/terraform
+        id: apply
+        run: terraform apply -no-color -auto-approve
+        env:
+          TF_VAR_discord_bot_token: ${{ vars.DISCORD_ZINA_BOT_TOKEN }}
+          TF_VAR_discord_application_id: ${{ secrets.DISCORD_ZINA_BOT_APPLICATION_ID }}
+          TF_VAR_discord_admin_role_id: ${{ secrets.DISCORD_ZINA_BOT_ADMIN_ROLE_ID }}
+          TF_VAR_table_name: ${{ vars.RAID_EVENTS_TABLE_NAME || 'raid-finder-events' }}
+          TF_VAR_aws_region: ${{ vars.AWS_REGION || 'us-east-1' }}
+          TF_VAR_environment: production
+
+      - name: Get EC2 Instance IP
+        id: get_ip
+        working-directory: ${{ env.working_path }}/.cicd/terraform
+        run: |
+          EC2_IP=$(terraform output -raw discord_bot_public_ip)
+          echo "ec2_ip=$EC2_IP" >> $GITHUB_OUTPUT
+          echo "EC2 Instance IP: $EC2_IP"
+
+    outputs:
+      ec2_ip: ${{ steps.get_ip.outputs.ec2_ip }}
+
+  build_and_deploy:
+    name: Build and Deploy Bot Application
+    needs: terraform
+    runs-on: ubuntu-latest
+    environment: discord-zina-bot-production
+    env:
+      working_path: discord-zina-bot
+    steps:
+      - name: Clone the repository code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+
+      - name: Install dependencies
+        working-directory: ${{ env.working_path }}
+        run: npm ci
+
+      - name: Build project
+        working-directory: ${{ env.working_path }}
+        run: npm run build
+
+      - name: Create deployment package
+        working-directory: ${{ env.working_path }}
+        run: |
+          tar -czf discord-bot-deploy.tar.gz dist node_modules package.json package-lock.json
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.BRZ_SSH_PRIVATE_KEY }}" > ~/.ssh/brz_key
+          chmod 600 ~/.ssh/brz_key
+          ssh-keyscan -H ${{ needs.terraform.outputs.ec2_ip }} >> ~/.ssh/known_hosts
+
+      - name: Upload deployment package to EC2
+        run: |
+          scp -i ~/.ssh/brz_key \
+            ${{ env.working_path }}/discord-bot-deploy.tar.gz \
+            ec2-user@${{ needs.terraform.outputs.ec2_ip }}:/tmp/
+
+      - name: Deploy and restart bot on EC2
+        run: |
+          ssh -i ~/.ssh/brz_key ec2-user@${{ needs.terraform.outputs.ec2_ip }} << 'ENDSSH'
+            # Stop the bot service
+            sudo systemctl stop discord-bot || true
+            
+            # Extract new version
+            sudo tar -xzf /tmp/discord-bot-deploy.tar.gz -C /opt/discord-bot/ --overwrite
+            
+            # Set ownership
+            sudo chown -R discord-bot:discord-bot /opt/discord-bot
+            
+            # Start the bot service
+            sudo systemctl enable discord-bot
+            sudo systemctl start discord-bot
+            
+            # Wait a moment and check status
+            sleep 3
+            sudo systemctl status discord-bot --no-pager
+            
+            # Clean up
+            rm /tmp/discord-bot-deploy.tar.gz
+          ENDSSH
+
+      - name: Verify deployment
+        run: |
+          ssh -i ~/.ssh/brz_key ec2-user@${{ needs.terraform.outputs.ec2_ip }} << 'ENDSSH'
+            echo "Checking bot logs..."
+            sudo journalctl -u discord-bot -n 20 --no-pager
+          ENDSSH
+
+  deploy_lambda_functions:
+    name: Deploy Lambda Functions (Scheduled Tasks)
+    needs: build_and_deploy
+    runs-on: ubuntu-latest
+    environment: discord-zina-bot-production
+    env:
+      working_path: discord-zina-bot
+    steps:
+      - name: Clone the repository code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+
+      - name: Install dependencies
+        working-directory: ${{ env.working_path }}
+        run: npm ci
+
+      - name: Build project
+        working-directory: ${{ env.working_path }}
+        run: npm run build
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+
+      - name: Create .env file for serverless
+        working-directory: ${{ env.working_path }}
+        run: |
+          echo "DISCORD_BOT_TOKEN=${{ secrets.DISCORD_ZINA_BOT_TOKEN }}" >> .env
+          echo "DISCORD_APPLICATION_ID=${{ secrets.DISCORD_ZINA_BOT_APPLICATION_ID }}" >> .env
+          echo "DISCORD_ADMIN_ROLE_ID=${{ secrets.DISCORD_ZINA_BOT_ADMIN_ROLE_ID }}" >> .env
+          echo "RAID_EVENTS_TABLE_NAME=${{ vars.RAID_EVENTS_TABLE_NAME || 'raid-finder-events' }}" >> .env
+          echo "SLS_LAMBDA_ROLE=${{ secrets.SLS_LAMBDA_ROLE }}" >> .env
+
+      - name: Deploy Lambda functions with Serverless
+        uses: serverless/github-action@v3.2
+        with:
+          args: -c "cd ./${{ env.working_path }} && serverless deploy"
+          entrypoint: /bin/sh

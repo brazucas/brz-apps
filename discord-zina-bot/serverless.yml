@@ -19,7 +19,6 @@ provider:
     DISCORD_APPLICATION_ID: ${env:DISCORD_APPLICATION_ID}
     DISCORD_ADMIN_ROLE_ID: ${env:DISCORD_ADMIN_ROLE_ID}
     RAID_EVENTS_TABLE_NAME: ${env:RAID_EVENTS_TABLE_NAME}
-    AWS_REGION: ${self:provider.region}
 
 package:
   excludeDevDependencies: true
@@ -34,13 +33,6 @@ package:
     - '!node_modules/@prisma/**'
 
 functions:
-  bot:
-    handler: dist/lambda.handler
-    events:
-      - schedule:
-          rate: rate(5 minutes)
-          enabled: true
-  
   notifications:
     handler: dist/scheduled/notifications.handler
     events:

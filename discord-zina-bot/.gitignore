@@ -5,3 +5,11 @@ dist/
 .DS_Store
 coverage/
 .serverless/
+
+# Terraform
+.cicd/terraform/.terraform/
+.cicd/terraform/*.tfstate
+.cicd/terraform/*.tfstate.*
+.cicd/terraform/terraform.tfvars.local
+.cicd/terraform/brz_key.pub
+.cicd/terraform/.terraform.lock.hcl

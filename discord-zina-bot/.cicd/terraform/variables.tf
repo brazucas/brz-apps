@@ -15,3 +15,22 @@ variable "table_name" {
   type        = string
   default     = "zina-bot-raid-events"
 }
+
+variable "discord_bot_token" {
+  description = "Discord bot token"
+  type        = string
+  sensitive   = true
+  # No default - must be provided via TF_VAR_discord_bot_token or terraform.tfvars
+}
+
+variable "discord_application_id" {
+  description = "Discord application ID"
+  type        = string
+  # No default - must be provided via TF_VAR_discord_application_id or terraform.tfvars
+}
+
+variable "discord_admin_role_id" {
+  description = "Discord admin role ID"
+  type        = string
+  # No default - must be provided via TF_VAR_discord_admin_role_id or terraform.tfvars
+}
