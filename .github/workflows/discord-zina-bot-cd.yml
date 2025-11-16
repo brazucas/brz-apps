@@ -108,40 +108,32 @@ jobs:
             ec2-user@${{ needs.terraform.outputs.ec2_ip }}:/tmp/
 
       - name: Deploy and restart bot on EC2
-        env:
-          BOT_TOKEN: ${{ secrets.DISCORD_ZINA_BOT_TOKEN }}
-          APP_ID: ${{ secrets.DISCORD_ZINA_BOT_APPLICATION_ID }}
-          ADMIN_ROLE: ${{ secrets.DISCORD_ZINA_BOT_ADMIN_ROLE_ID }}
-          TABLE_NAME: ${{ vars.RAID_EVENTS_TABLE_NAME || 'raid-finder-events' }}
         run: |
-          ssh -i ~/.ssh/brz_key ec2-user@${{ needs.terraform.outputs.ec2_ip }} \
-            "BOT_TOKEN='${BOT_TOKEN}' APP_ID='${APP_ID}' ADMIN_ROLE='${ADMIN_ROLE}' TABLE_NAME='${TABLE_NAME}' bash -s" << 'ENDSSH'
-            # Stop the bot service
-            sudo systemctl stop discord-bot || true
-            
-            # Extract new version
-            sudo tar -xzf /tmp/discord-bot-deploy.tar.gz -C /opt/discord-bot/ --overwrite
-            
-            # Create/update .env file with environment variables
-            echo "DISCORD_BOT_TOKEN=${BOT_TOKEN}" | sudo tee /opt/discord-bot/.env > /dev/null
-            echo "DISCORD_APPLICATION_ID=${APP_ID}" | sudo tee -a /opt/discord-bot/.env > /dev/null
-            echo "DISCORD_ADMIN_ROLE_ID=${ADMIN_ROLE}" | sudo tee -a /opt/discord-bot/.env > /dev/null
-            echo "RAID_EVENTS_TABLE_NAME=${TABLE_NAME}" | sudo tee -a /opt/discord-bot/.env > /dev/null
-            
-            # Set ownership
-            sudo chown -R discord-bot:discord-bot /opt/discord-bot
-            
-            # Start the bot service
-            sudo systemctl enable discord-bot
-            sudo systemctl start discord-bot
-            
-            # Wait a moment and check status
-            sleep 3
-            sudo systemctl status discord-bot --no-pager
-            
-            # Clean up
-            rm /tmp/discord-bot-deploy.tar.gz
-          ENDSSH
+          # Stop the bot service
+          ssh -i ~/.ssh/brz_key ec2-user@${{ needs.terraform.outputs.ec2_ip }} "sudo systemctl stop discord-bot || true"
+
+          # Extract new version
+          ssh -i ~/.ssh/brz_key ec2-user@${{ needs.terraform.outputs.ec2_ip }} "sudo tar -xzf /tmp/discord-bot-deploy.tar.gz -C /opt/discord-bot/ --overwrite"
+
+          # Create .env file with all environment variables
+          ssh -i ~/.ssh/brz_key ec2-user@${{ needs.terraform.outputs.ec2_ip }} "echo 'DISCORD_BOT_TOKEN=${{ secrets.DISCORD_ZINA_BOT_TOKEN }}' | sudo tee /opt/discord-bot/.env > /dev/null"
+          ssh -i ~/.ssh/brz_key ec2-user@${{ needs.terraform.outputs.ec2_ip }} "echo 'DISCORD_APPLICATION_ID=${{ secrets.DISCORD_ZINA_BOT_APPLICATION_ID }}' | sudo tee -a /opt/discord-bot/.env > /dev/null"
+          ssh -i ~/.ssh/brz_key ec2-user@${{ needs.terraform.outputs.ec2_ip }} "echo 'DISCORD_ADMIN_ROLE_ID=${{ secrets.DISCORD_ZINA_BOT_ADMIN_ROLE_ID }}' | sudo tee -a /opt/discord-bot/.env > /dev/null"
+          ssh -i ~/.ssh/brz_key ec2-user@${{ needs.terraform.outputs.ec2_ip }} "echo 'RAID_EVENTS_TABLE_NAME=${{ vars.RAID_EVENTS_TABLE_NAME || 'raid-finder-events' }}' | sudo tee -a /opt/discord-bot/.env > /dev/null"
+
+          # Set ownership
+          ssh -i ~/.ssh/brz_key ec2-user@${{ needs.terraform.outputs.ec2_ip }} "sudo chown -R discord-bot:discord-bot /opt/discord-bot"
+
+          # Start the bot service
+          ssh -i ~/.ssh/brz_key ec2-user@${{ needs.terraform.outputs.ec2_ip }} "sudo systemctl enable discord-bot"
+          ssh -i ~/.ssh/brz_key ec2-user@${{ needs.terraform.outputs.ec2_ip }} "sudo systemctl start discord-bot"
+
+          # Wait and check status
+          sleep 3
+          ssh -i ~/.ssh/brz_key ec2-user@${{ needs.terraform.outputs.ec2_ip }} "sudo systemctl status discord-bot --no-pager"
+
+          # Clean up
+          ssh -i ~/.ssh/brz_key ec2-user@${{ needs.terraform.outputs.ec2_ip }} "rm /tmp/discord-bot-deploy.tar.gz"
 
       - name: Verify deployment
         run: |
