@@ -1,0 +1,56 @@
+app: discord-raid-finder
+plugins:
+  - serverless-dotenv-plugin
+  - serverless-offline
+
+service: discord-raid-finder
+useDotenv: true
+provider:
+  name: aws
+  runtime: nodejs20.x
+  stage: dev
+  region: us-east-1
+  memorySize: 512
+  timeout: 30
+  iam:
+    role: ${env:SLS_LAMBDA_ROLE}
+  environment:
+    DISCORD_BOT_TOKEN: ${env:DISCORD_BOT_TOKEN}
+    DISCORD_APPLICATION_ID: ${env:DISCORD_APPLICATION_ID}
+    DISCORD_ADMIN_ROLE_ID: ${env:DISCORD_ADMIN_ROLE_ID}
+    EVENTS_TABLE_NAME: ${env:EVENTS_TABLE_NAME}
+    AWS_REGION: ${self:provider.region}
+
+package:
+  excludeDevDependencies: true
+  patterns:
+    - dist/**
+    - package.json
+    - package-lock.json
+    - '!.cicd/**'
+    - '!src/**'
+    - '!test/**'
+    - '!node_modules/.prisma/**'
+    - '!node_modules/@prisma/**'
+
+functions:
+  bot:
+    handler: dist/lambda.handler
+    events:
+      - schedule:
+          rate: rate(5 minutes)
+          enabled: true
+  
+  notifications:
+    handler: dist/scheduled/notifications.handler
+    events:
+      - schedule:
+          rate: rate(5 minutes)
+          enabled: true
+  
+  recurrence:
+    handler: dist/scheduled/recurrence.handler
+    events:
+      - schedule:
+          rate: rate(1 hour)
+          enabled: true
