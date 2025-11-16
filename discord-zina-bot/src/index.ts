@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { Client, Events } from "discord.js";
 import { config } from "./config";
 import { createDiscordClient } from "./discord/client";
