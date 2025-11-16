@@ -164,6 +164,10 @@ const translations: Translations = {
     en: "Event started",
     pt: "Evento iniciado",
   },
+  threadWelcome: {
+    en: "Use this thread to discuss the event!",
+    pt: "Use este tópico para discutir o evento!",
+  },
 };
 
 export const t = (key: string, language: Language = "en"): string => {

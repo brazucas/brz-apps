@@ -141,6 +141,20 @@ export const postEventMessage = async (
     components: buttons,
   });
 
+  // Create a thread for this event
+  const thread = await message.startThread({
+    name: `${event.name}`,
+    autoArchiveDuration: 10080, // 7 days
+  });
+
+  // Post a welcome message in the thread
+  const lang = event.language as Language;
+  await thread.send(
+    `📋 ${
+      t("threadWelcome", lang) || `Use this thread to discuss ${event.name}`
+    }`
+  );
+
   return message.id;
 };
 
