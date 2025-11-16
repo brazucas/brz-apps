@@ -11,7 +11,7 @@ import {
 } from "discord.js";
 import { RaidEvent, Signup } from "../types";
 import { formatDateWithTimezone } from "../utils/timezone-utils";
-import { t, Language } from "../utils/i18n";
+import { t, Language, formatRelativeTime } from "../utils/i18n";
 
 export const createDiscordClient = (): Client => {
   const client = new Client({
@@ -23,6 +23,12 @@ export const createDiscordClient = (): Client => {
 
 export const buildEventEmbed = (event: RaidEvent): EmbedBuilder => {
   const lang = event.language as Language;
+  const relativeTime = formatRelativeTime(event.startDate, lang);
+  const formattedStartTime = formatDateWithTimezone(
+    event.startDate,
+    event.timezone
+  );
+
   const embed = new EmbedBuilder()
     .setTitle(event.name)
     .setDescription(event.description)
@@ -30,7 +36,7 @@ export const buildEventEmbed = (event: RaidEvent): EmbedBuilder => {
     .addFields(
       {
         name: t("startTime", lang),
-        value: formatDateWithTimezone(event.startDate, event.timezone),
+        value: `*${relativeTime}*\n${formattedStartTime}`,
         inline: true,
       },
       {

@@ -54,3 +54,10 @@ functions:
       - schedule:
           rate: rate(1 hour)
           enabled: true
+  
+  countdownUpdater:
+    handler: dist/scheduled/countdown-updater.handler
+    events:
+      - schedule:
+          rate: rate(1 minute)
+          enabled: true

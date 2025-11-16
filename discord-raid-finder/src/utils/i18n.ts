@@ -136,6 +136,34 @@ const translations: Translations = {
     en: "minute",
     pt: "minuto",
   },
+  in: {
+    en: "In",
+    pt: "Em",
+  },
+  hours: {
+    en: "hours",
+    pt: "horas",
+  },
+  hour: {
+    en: "hour",
+    pt: "hora",
+  },
+  days: {
+    en: "days",
+    pt: "dias",
+  },
+  day: {
+    en: "day",
+    pt: "dia",
+  },
+  now: {
+    en: "Starting now!",
+    pt: "Começando agora!",
+  },
+  eventStarted: {
+    en: "Event started",
+    pt: "Evento iniciado",
+  },
 };
 
 export const t = (key: string, language: Language = "en"): string => {
@@ -149,4 +177,40 @@ export const formatMinutes = (
   const minuteText =
     minutes === 1 ? t("minute", language) : t("minutes", language);
   return `${minutes} ${minuteText}`;
+};
+
+export const formatRelativeTime = (
+  targetDate: string,
+  language: Language = "en"
+): string => {
+  const now = new Date();
+  const target = new Date(targetDate);
+  const diffMs = target.getTime() - now.getTime();
+
+  if (diffMs < 0) {
+    return t("eventStarted", language);
+  }
+
+  if (diffMs < 60000) {
+    return t("now", language);
+  }
+
+  const diffMinutes = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffDays > 0) {
+    const dayText = diffDays === 1 ? t("day", language) : t("days", language);
+    return `${t("in", language)} ${diffDays} ${dayText}`;
+  }
+
+  if (diffHours > 0) {
+    const hourText =
+      diffHours === 1 ? t("hour", language) : t("hours", language);
+    return `${t("in", language)} ${diffHours} ${hourText}`;
+  }
+
+  const minuteText =
+    diffMinutes === 1 ? t("minute", language) : t("minutes", language);
+  return `${t("in", language)} ${diffMinutes} ${minuteText}`;
 };
