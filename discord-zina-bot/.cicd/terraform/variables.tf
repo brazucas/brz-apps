@@ -34,3 +34,10 @@ variable "discord_admin_role_id" {
   type        = string
   # No default - must be provided via TF_VAR_discord_admin_role_id or terraform.tfvars
 }
+
+variable "ssh_public_key" {
+  description = "SSH public key for EC2 access"
+  type        = string
+  # No default - must be provided via TF_VAR_ssh_public_key or terraform.tfvars
+  # In GitHub Actions, this comes from BRZ_SSH_PUBLIC_KEY secret
+}

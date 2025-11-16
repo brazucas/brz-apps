@@ -4,7 +4,7 @@
 # SSH Key Pair
 resource "aws_key_pair" "discord_bot" {
   key_name   = "discord-zina-bot-key"
-  public_key = file("${path.module}/brz_key.pub")
+  public_key = var.ssh_public_key
 
   tags = {
     Name        = "discord-zina-bot-key"

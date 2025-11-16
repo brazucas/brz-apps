@@ -35,11 +35,6 @@ jobs:
           echo "aws_secret_access_key = ${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> ~/.aws/credentials
           AWS_PROFILE=default && echo AWS_PROFILE=$AWS_PROFILE >> $GITHUB_ENV
 
-      - name: Copy SSH public key for EC2
-        run: |
-          mkdir -p ${{ env.working_path }}/.cicd/terraform
-          echo "${{ vars.BRZ_SSH_PUBLIC_KEY }}" > ${{ env.working_path }}/.cicd/terraform/brz_key.pub
-
       - name: Initialize the Terraform working directory
         working-directory: ${{ env.working_path }}/.cicd/terraform
         id: init
@@ -53,6 +48,7 @@ jobs:
           TF_VAR_discord_bot_token: ${{ vars.DISCORD_ZINA_BOT_TOKEN }}
           TF_VAR_discord_application_id: ${{ secrets.DISCORD_ZINA_BOT_APPLICATION_ID }}
           TF_VAR_discord_admin_role_id: ${{ secrets.DISCORD_ZINA_BOT_ADMIN_ROLE_ID }}
+          TF_VAR_ssh_public_key: ${{ secrets.BRZ_SSH_PUBLIC_KEY }}
           TF_VAR_table_name: ${{ vars.RAID_EVENTS_TABLE_NAME || 'raid-finder-events' }}
           TF_VAR_aws_region: ${{ vars.AWS_REGION || 'us-east-1' }}
           TF_VAR_environment: production

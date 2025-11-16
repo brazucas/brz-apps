@@ -3,7 +3,7 @@ environment = "production"
 table_name  = "raid-finder-events"
 
 # Sensitive variables should be set via:
-# 1. Environment variables: TF_VAR_discord_bot_token, etc.
+# 1. Environment variables: TF_VAR_discord_bot_token, TF_VAR_ssh_public_key, etc.
 # 2. GitHub Actions secrets (for CI/CD)
 # 3. Local override: Create terraform.tfvars.local (gitignored)
 #
@@ -11,3 +11,4 @@ table_name  = "raid-finder-events"
 # discord_bot_token      = "your_token_here"
 # discord_application_id = "your_app_id_here"
 # discord_admin_role_id  = "your_role_id_here"
+# ssh_public_key         = "ssh-rsa AAAA..."
