@@ -11,7 +11,7 @@ variable "environment" {
 }
 
 variable "table_name" {
-  description = "DynamoDB table name for events"
+  description = "DynamoDB table name for raid events"
   type        = string
-  default     = "raid-finder-events"
+  default     = "zina-bot-raid-events"
 }

@@ -1,7 +1,7 @@
 {
-  "name": "discord-raid-finder",
+  "name": "discord-zina-bot",
   "version": "1.0.0",
-  "description": "Discord raid finder bot for managing raid events",
+  "description": "Discord Zina Bot - Multi-feature bot with raid management and more",
   "main": "dist/index.js",
   "scripts": {
     "prebuild": "rimraf dist",

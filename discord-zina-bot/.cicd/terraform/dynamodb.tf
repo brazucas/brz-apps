@@ -44,7 +44,8 @@ resource "aws_dynamodb_table" "events" {
 
   tags = {
     Environment = var.environment
-    Application = "discord-raid-finder"
+    Application = "discord-zina-bot"
+    Feature     = "raids"
     ManagedBy   = "terraform"
   }
 }

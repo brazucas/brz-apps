@@ -43,7 +43,7 @@ export const createEvent = async (
 
   await docClient.send(
     new PutCommand({
-      TableName: config.aws.eventsTable,
+      TableName: config.aws.raidEventsTable,
       Item: {
         ...event,
         cancelled: event.cancelled ? 1 : 0,
@@ -58,7 +58,7 @@ export const createEvent = async (
 export const getEvent = async (eventId: string): Promise<RaidEvent | null> => {
   const result = await docClient.send(
     new GetCommand({
-      TableName: config.aws.eventsTable,
+      TableName: config.aws.raidEventsTable,
       Key: { id: eventId },
     })
   );
@@ -80,7 +80,7 @@ export const updateEventMessageId = async (
 ): Promise<void> => {
   await docClient.send(
     new UpdateCommand({
-      TableName: config.aws.eventsTable,
+      TableName: config.aws.raidEventsTable,
       Key: { id: eventId },
       UpdateExpression: "SET messageId = :messageId",
       ExpressionAttributeValues: {
@@ -128,7 +128,7 @@ export const addSignup = async (
 
   await docClient.send(
     new PutCommand({
-      TableName: config.aws.eventsTable,
+      TableName: config.aws.raidEventsTable,
       Item: {
         ...event,
         cancelled: event.cancelled ? 1 : 0,
@@ -169,7 +169,7 @@ export const removeSignup = async (
 
   await docClient.send(
     new PutCommand({
-      TableName: config.aws.eventsTable,
+      TableName: config.aws.raidEventsTable,
       Item: {
         ...event,
         cancelled: event.cancelled ? 1 : 0,
@@ -190,7 +190,7 @@ export const cancelEvent = async (eventId: string): Promise<RaidEvent> => {
 
   await docClient.send(
     new PutCommand({
-      TableName: config.aws.eventsTable,
+      TableName: config.aws.raidEventsTable,
       Item: {
         ...event,
         cancelled: 1,
@@ -206,7 +206,7 @@ export const getUpcomingEvents = async (): Promise<RaidEvent[]> => {
 
   const result = await docClient.send(
     new QueryCommand({
-      TableName: config.aws.eventsTable,
+      TableName: config.aws.raidEventsTable,
       IndexName: "startDate-index",
       KeyConditionExpression: "cancelled = :cancelled AND startDate > :now",
       ExpressionAttributeValues: {
@@ -237,7 +237,7 @@ export const addNotificationSent = async (
 
   await docClient.send(
     new PutCommand({
-      TableName: config.aws.eventsTable,
+      TableName: config.aws.raidEventsTable,
       Item: {
         ...event,
         cancelled: event.cancelled ? 1 : 0,
@@ -278,7 +278,7 @@ export const updateEvent = async (
 
   await docClient.send(
     new PutCommand({
-      TableName: config.aws.eventsTable,
+      TableName: config.aws.raidEventsTable,
       Item: {
         ...updatedEvent,
         cancelled: updatedEvent.cancelled ? 1 : 0,

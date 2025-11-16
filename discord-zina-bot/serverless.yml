@@ -1,9 +1,9 @@
-app: discord-raid-finder
+app: discord-zina-bot
 plugins:
   - serverless-dotenv-plugin
   - serverless-offline
 
-service: discord-raid-finder
+service: discord-zina-bot
 useDotenv: true
 provider:
   name: aws
@@ -18,7 +18,7 @@ provider:
     DISCORD_BOT_TOKEN: ${env:DISCORD_BOT_TOKEN}
     DISCORD_APPLICATION_ID: ${env:DISCORD_APPLICATION_ID}
     DISCORD_ADMIN_ROLE_ID: ${env:DISCORD_ADMIN_ROLE_ID}
-    EVENTS_TABLE_NAME: ${env:EVENTS_TABLE_NAME}
+    RAID_EVENTS_TABLE_NAME: ${env:RAID_EVENTS_TABLE_NAME}
     AWS_REGION: ${self:provider.region}
 
 package:

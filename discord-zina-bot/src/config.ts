@@ -6,6 +6,6 @@ export const config = {
   },
   aws: {
     region: process.env.AWS_REGION || "us-east-1",
-    eventsTable: process.env.EVENTS_TABLE_NAME!,
+    raidEventsTable: process.env.RAID_EVENTS_TABLE_NAME!,
   },
 };
