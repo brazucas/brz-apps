@@ -115,10 +115,11 @@ export const buildRoleButtons = (
     rows.push(currentRow);
   }
 
+  const lang = event.language as Language;
   const actionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
       .setCustomId(`unsignup:${event.id}`)
-      .setLabel("Leave Event")
+      .setLabel(t("leaveEvent", lang))
       .setStyle(ButtonStyle.Danger)
       .setDisabled(event.cancelled)
   );

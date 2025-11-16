@@ -168,6 +168,10 @@ const translations: Translations = {
     en: "Use this thread to discuss the event!",
     pt: "Use este tópico para discutir o evento!",
   },
+  leaveEvent: {
+    en: "Leave Event",
+    pt: "Deixar evento",
+  },
 };
 
 export const t = (key: string, language: Language = "en"): string => {
