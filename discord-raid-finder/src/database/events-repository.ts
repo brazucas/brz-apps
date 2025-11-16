@@ -27,6 +27,7 @@ export const createEvent = async (
     startDate: params.startDate,
     endDate: params.endDate,
     timezone: params.timezone,
+    language: params.language,
     roles: params.roles,
     signups: [],
     bench: [],
@@ -253,6 +254,7 @@ type EventUpdateParams = Partial<
     | "startDate"
     | "endDate"
     | "timezone"
+    | "language"
     | "roles"
     | "noticeMinutes"
   >

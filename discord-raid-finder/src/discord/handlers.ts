@@ -36,6 +36,7 @@ import {
   validateNoticeMinutes,
   validateEventDates,
 } from "../utils/validation";
+import { t, Language } from "../utils/i18n";
 
 export const registerCommands = async (client: Client): Promise<void> => {
   const rest = new REST({ version: "10" }).setToken(config.discord.token);
@@ -113,10 +114,12 @@ const handleCreateRaidCommand = async (
   interaction: ChatInputCommandInteraction,
   client: Client
 ): Promise<void> => {
+  const language = (interaction.options.getString("language") ||
+    "en") as Language;
   const isAdmin = await hasAdminRole(interaction, config.discord.adminRoleId);
   if (!isAdmin) {
     await interaction.reply({
-      content: "You do not have permission to create events.",
+      content: t("noPermission", language),
       ephemeral: true,
     });
     return;
@@ -156,6 +159,7 @@ const handleCreateRaidCommand = async (
     startDate,
     endDate,
     timezone,
+    language,
     roles,
     createdBy: interaction.user.id,
     noticeMinutes,
@@ -175,9 +179,7 @@ const handleCreateRaidCommand = async (
   const messageId = await postEventMessage(client, event);
   await updateEventMessageId(event.id, messageId);
 
-  await interaction.editReply(
-    `Event created successfully! Event ID: ${event.id}`
-  );
+  await interaction.editReply(`${t("eventCreated", language)} ${event.id}`);
 };
 
 const handleCancelRaidCommand = async (
@@ -187,7 +189,7 @@ const handleCancelRaidCommand = async (
   const isAdmin = await hasAdminRole(interaction, config.discord.adminRoleId);
   if (!isAdmin) {
     await interaction.reply({
-      content: "You do not have permission to cancel events.",
+      content: t("noPermissionCancel", "en"),
       ephemeral: true,
     });
     return;
@@ -198,10 +200,18 @@ const handleCancelRaidCommand = async (
   await interaction.deferReply({ ephemeral: true });
 
   const event = await cancelEvent(eventId);
+
+  if (!event) {
+    await interaction.editReply(t("eventNotFound", "en"));
+    return;
+  }
+
   await updateEventMessage(client, event);
   await postCancellationMessage(client, event);
 
-  await interaction.editReply("Event cancelled successfully!");
+  await interaction.editReply(
+    `${event.name} ${t("eventCancelledSuccess", event.language as Language)}`
+  );
 };
 
 const handleListRaidsCommand = async (
@@ -212,20 +222,21 @@ const handleListRaidsCommand = async (
   const events = await getUpcomingEvents();
 
   if (events.length === 0) {
-    await interaction.editReply("No upcoming events.");
+    await interaction.editReply(t("noUpcomingEvents", "en"));
     return;
   }
 
   const eventList = events
     .map(
       (e) =>
-        `**${e.name}** (ID: ${e.id})\nStarts: ${new Date(
-          e.startDate
-        ).toLocaleString()}`
+        `**${e.name}** (ID: ${e.id})\n${t(
+          "starts",
+          e.language as Language
+        )}: ${new Date(e.startDate).toLocaleString()}`
     )
     .join("\n\n");
 
-  await interaction.editReply(`Upcoming Events:\n\n${eventList}`);
+  await interaction.editReply(`${t("upcomingEvents", "en")}:\n\n${eventList}`);
 };
 
 const handleEditRaidCommand = async (
@@ -235,7 +246,7 @@ const handleEditRaidCommand = async (
   const isAdmin = await hasAdminRole(interaction, config.discord.adminRoleId);
   if (!isAdmin) {
     await interaction.reply({
-      content: "You don't have permission to edit events.",
+      content: t("noPermissionEdit", "en"),
       ephemeral: true,
     });
     return;
@@ -247,20 +258,25 @@ const handleEditRaidCommand = async (
   const existingEvent = await getEvent(eventId);
 
   if (!existingEvent) {
-    await interaction.editReply("Event not found.");
+    await interaction.editReply(t("eventNotFound", "en"));
     return;
   }
 
   if (existingEvent.guildId !== interaction.guildId) {
-    await interaction.editReply("Event not found in this guild.");
+    await interaction.editReply(t("eventNotFoundGuild", "en"));
     return;
   }
 
+  const lang = existingEvent.language as Language;
   const name = interaction.options.getString("name");
   const description = interaction.options.getString("description");
   const startDateStr = interaction.options.getString("start-time");
   const endDateStr = interaction.options.getString("end-time");
   const timezone = interaction.options.getString("timezone");
+  const language = interaction.options.getString("language") as
+    | "en"
+    | "pt"
+    | null;
   const noticeMinutesStr = interaction.options.getString("notice-minutes");
   const rolesStr = interaction.options.getString("roles");
 
@@ -273,8 +289,8 @@ const handleEditRaidCommand = async (
       roles = parsedRoles;
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : "Invalid roles format";
-      await interaction.editReply(`Invalid roles: ${errorMessage}`);
+        error instanceof Error ? error.message : t("invalidRolesFormat", lang);
+      await interaction.editReply(`${t("invalidRoles", lang)} ${errorMessage}`);
       return;
     }
   }
@@ -291,8 +307,12 @@ const handleEditRaidCommand = async (
       noticeMinutes = parsed;
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : "Invalid notice minutes";
-      await interaction.editReply(`Invalid notice minutes: ${errorMessage}`);
+        error instanceof Error
+          ? error.message
+          : t("invalidNoticeMinutes", lang);
+      await interaction.editReply(
+        `${t("invalidNoticeMinutes", lang)} ${errorMessage}`
+      );
       return;
     }
   }
@@ -304,7 +324,7 @@ const handleEditRaidCommand = async (
     try {
       startDate = new Date(startDateStr).toISOString();
     } catch (error) {
-      await interaction.editReply("Invalid start date format");
+      await interaction.editReply(t("invalidStartDateFormat", lang));
       return;
     }
   }
@@ -313,7 +333,7 @@ const handleEditRaidCommand = async (
     try {
       endDate = new Date(endDateStr).toISOString();
     } catch (error) {
-      await interaction.editReply("Invalid end date format");
+      await interaction.editReply(t("invalidEndDateFormat", lang));
       return;
     }
   }
@@ -322,8 +342,10 @@ const handleEditRaidCommand = async (
     validateEventDates(startDate, endDate);
   } catch (error) {
     const errorMessage =
-      error instanceof Error ? error.message : "Invalid dates";
-    await interaction.editReply(`Date validation error: ${errorMessage}`);
+      error instanceof Error ? error.message : t("dateValidationError", lang);
+    await interaction.editReply(
+      `${t("dateValidationError", lang)} ${errorMessage}`
+    );
     return;
   }
 
@@ -333,12 +355,18 @@ const handleEditRaidCommand = async (
     startDate,
     endDate,
     timezone: timezone ?? existingEvent.timezone,
+    language: language ?? existingEvent.language,
     roles,
     noticeMinutes,
   });
 
   await updateEventMessage(client, updatedEvent);
-  await interaction.editReply(`Event "${updatedEvent.name}" has been updated!`);
+  await interaction.editReply(
+    `${updatedEvent.name} ${t(
+      "eventUpdated",
+      updatedEvent.language as Language
+    )}`
+  );
 };
 
 const handleButtonInteraction = async (
@@ -349,6 +377,14 @@ const handleButtonInteraction = async (
     const [action, eventId, roleName] = interaction.customId.split(":");
 
     await interaction.deferReply({ ephemeral: true });
+
+    const event = await getEvent(eventId);
+    if (!event) {
+      await interaction.editReply(t("eventNotFound", "en"));
+      return;
+    }
+
+    const lang = event.language as Language;
 
     if (action === "signup") {
       const signup: Signup = {
@@ -361,17 +397,17 @@ const handleButtonInteraction = async (
       const updatedEvent = await addSignup(eventId, signup);
       await updateEventMessage(client, updatedEvent);
 
-      await interaction.editReply("You have been signed up!");
+      await interaction.editReply(t("signedUp", lang));
     } else if (action === "unsignup") {
       const updatedEvent = await removeSignup(eventId, interaction.user.id);
       await updateEventMessage(client, updatedEvent);
 
-      await interaction.editReply("You have been removed from the event.");
+      await interaction.editReply(t("removed", lang));
     }
   } catch (error) {
     console.error("Error handling button interaction:", error);
     const errorMessage =
-      error instanceof Error ? error.message : "An error occurred";
-    await interaction.editReply(`Error: ${errorMessage}`);
+      error instanceof Error ? error.message : t("error", "en");
+    await interaction.editReply(`${t("error", "en")} ${errorMessage}`);
   }
 };

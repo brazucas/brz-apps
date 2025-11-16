@@ -48,6 +48,7 @@ export const handler = async (
             startDate: nextStartTime.toISOString(),
             endDate: nextEndTime?.toISOString(),
             timezone: raidEvent.timezone,
+            language: raidEvent.language,
             roles: raidEvent.roles,
             createdBy: raidEvent.createdBy,
             noticeMinutes: raidEvent.noticeMinutes,

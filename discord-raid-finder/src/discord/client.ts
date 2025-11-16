@@ -11,6 +11,7 @@ import {
 } from "discord.js";
 import { RaidEvent, Signup } from "../types";
 import { formatDateWithTimezone } from "../utils/timezone-utils";
+import { t, Language } from "../utils/i18n";
 
 export const createDiscordClient = (): Client => {
   const client = new Client({
@@ -21,18 +22,19 @@ export const createDiscordClient = (): Client => {
 };
 
 export const buildEventEmbed = (event: RaidEvent): EmbedBuilder => {
+  const lang = event.language as Language;
   const embed = new EmbedBuilder()
     .setTitle(event.name)
     .setDescription(event.description)
     .setColor(event.cancelled ? 0xff0000 : 0x00ff00)
     .addFields(
       {
-        name: "Start Time",
+        name: t("startTime", lang),
         value: formatDateWithTimezone(event.startDate, event.timezone),
         inline: true,
       },
       {
-        name: "End Time",
+        name: t("endTime", lang),
         value: event.endDate
           ? formatDateWithTimezone(event.endDate, event.timezone)
           : "N/A",
@@ -40,12 +42,21 @@ export const buildEventEmbed = (event: RaidEvent): EmbedBuilder => {
       }
     );
 
+  if (event.cancelled) {
+    embed.setDescription(
+      `**${t("cancelled", lang)}**\n\n${event.description}\n\n${t(
+        "eventCancelled",
+        lang
+      )}`
+    );
+  }
+
   event.roles.forEach((role) => {
     const roleSignups = event.signups.filter((s) => s.roleName === role.name);
     const signupList =
       roleSignups.length > 0
         ? roleSignups.map((s) => `<@${s.userId}>`).join("\n")
-        : "No signups";
+        : t("noSignups", lang);
 
     embed.addFields({
       name: `${role.emoji} ${role.name} (${roleSignups.length}/${role.maxCount})`,
@@ -58,7 +69,11 @@ export const buildEventEmbed = (event: RaidEvent): EmbedBuilder => {
     const benchList = event.bench
       .map((s) => `<@${s.userId}> (${s.roleName})`)
       .join("\n");
-    embed.addFields({ name: "🪑 Bench", value: benchList, inline: false });
+    embed.addFields({
+      name: `🪑 ${t("bench", lang)}`,
+      value: benchList,
+      inline: false,
+    });
   }
 
   return embed;
@@ -144,14 +159,15 @@ export const postCancellationMessage = async (
   event: RaidEvent
 ): Promise<void> => {
   const channel = (await client.channels.fetch(event.channelId)) as TextChannel;
+  const lang = event.language as Language;
 
   const embed = new EmbedBuilder()
-    .setTitle(`❌ Event Cancelled: ${event.name}`)
+    .setTitle(`❌ ${t("cancelled", lang)}: ${event.name}`)
     .setDescription(
-      `The event scheduled for ${formatDateWithTimezone(
+      `${t("eventCancelled", lang)} ${formatDateWithTimezone(
         event.startDate,
         event.timezone
-      )} has been cancelled.`
+      )}`
     )
     .setColor(0xff0000);
 
@@ -173,17 +189,26 @@ export const postStartNotification = async (
   minutesBefore: number
 ): Promise<void> => {
   const channel = (await client.channels.fetch(event.channelId)) as TextChannel;
+  const lang = event.language as Language;
 
   const timeText =
     minutesBefore >= 60
-      ? `${Math.floor(minutesBefore / 60)} hour${
-          Math.floor(minutesBefore / 60) > 1 ? "s" : ""
+      ? `${Math.floor(minutesBefore / 60)} ${
+          Math.floor(minutesBefore / 60) > 1
+            ? lang === "pt"
+              ? "horas"
+              : "hours"
+            : lang === "pt"
+            ? "hora"
+            : "hour"
         }`
-      : `${minutesBefore} minute${minutesBefore > 1 ? "s" : ""}`;
+      : `${minutesBefore} ${
+          minutesBefore > 1 ? t("minutes", lang) : t("minute", lang)
+        }`;
 
   const embed = new EmbedBuilder()
-    .setTitle(`⏰ Event Starting Soon: ${event.name}`)
-    .setDescription(`This event starts in ${timeText}!`)
+    .setTitle(`⏰ ${t("reminderTitle", lang)}: ${event.name}`)
+    .setDescription(`${t("reminderDescription", lang)} ${timeText}!`)
     .setColor(0xffaa00);
 
   const signups = event.signups;

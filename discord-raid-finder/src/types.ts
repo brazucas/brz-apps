@@ -8,6 +8,7 @@ export type RaidEvent = {
   startDate: string;
   endDate?: string;
   timezone: string;
+  language: "en" | "pt";
   roles: EventRole[];
   signups: Signup[];
   bench: Signup[];
@@ -47,6 +48,7 @@ export type EventCreationParams = {
   startDate: string;
   endDate?: string;
   timezone: string;
+  language: "en" | "pt";
   roles: EventRole[];
   createdBy: string;
   noticeMinutes: number[];

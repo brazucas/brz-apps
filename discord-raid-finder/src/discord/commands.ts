@@ -48,6 +48,16 @@ export const createEventCommand = new SlashCommandBuilder()
       )
       .setRequired(false)
   )
+  .addStringOption((option) =>
+    option
+      .setName("language")
+      .setDescription("Language for bot messages")
+      .setRequired(false)
+      .addChoices(
+        { name: "English", value: "en" },
+        { name: "Português", value: "pt" }
+      )
+  )
   .addBooleanOption((option) =>
     option.setName("weekly").setDescription("Repeat weekly").setRequired(false)
   );
@@ -101,6 +111,16 @@ export const editEventCommand = new SlashCommandBuilder()
       .setName("timezone")
       .setDescription("Timezone (e.g., America/Sao_Paulo, America/New_York)")
       .setRequired(false)
+  )
+  .addStringOption((option) =>
+    option
+      .setName("language")
+      .setDescription("Language for bot messages")
+      .setRequired(false)
+      .addChoices(
+        { name: "English", value: "en" },
+        { name: "Português", value: "pt" }
+      )
   )
   .addStringOption((option) =>
     option
